@@ -17,7 +17,7 @@ database_volume_size    = 100               # How much storage (GiB) should the 
 
 database_name           = "n8n"
 database_admin_username = "dbadmin"
-database_admin_password = "q1w2e3r4100@!"    # 8-128 characters, combination of letters, digits, and special characters
+database_admin_password = "q1w2e3r4100!"    # 8-128 characters, combination of letters, digits, and special characters
 create_postgres_parameter_group = false
 
 #Multi AZ configuration
