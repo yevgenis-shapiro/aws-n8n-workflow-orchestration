@@ -1,0 +1,14 @@
+  addListenerForService "$external_nlb" "$SUITE_NAMESPACE" "itom-ingress-controller-svc-internal" TLS 30443 30443
+  addListenerForService "$external_nlb" "$SUITE_NAMESPACE" "itom-nom-na-proxy" TCP 32324 32324
+  addListenerForService "$external_nlb" "$SUITE_NAMESPACE" "itomdipulsar-proxy" TCP 6651 6651
+  addListenerForService "$external_nlb" "$SUITE_NAMESPACE" "itom-nom-na-proxy" TCP 22-23 22-23
+  addListenerForService "$external_nlb" "$SUITE_NAMESPACE" "itom-nom-ftpd" TCP 21 21
+  addListenerForService "$external_nlb" "$SUITE_NAMESPACE" "itom-nom-ftpd-pasv" TCP 32350-32369 32350-32369
+  addListenerForService "$external_nlb" "$SUITE_NAMESPACE" "itom-di-receiver-svc" TCP 5050 5050
+  addListenerForService "$external_nlb" "$SUITE_NAMESPACE" "itom-di-administration-svc" TCP 18443 18443
+  addListenerForService "$external_nlb" "$SUITE_NAMESPACE" "itom-di-data-access-svc" TCP 28443 28443
+  addListenerForService "$external_nlb" "$SUITE_NAMESPACE" "itomdipulsar-proxy" TCP 8443 8443
+  addListenerForService "$external_nlb" "$SUITE_NAMESPACE" "trapd-external" UDP 162 162
+  addListenerForService "$external_nlb" "$SUITE_NAMESPACE" "itom-nom-na-syslog" UDP 514 514
+  addListenerForService "$external_nlb" "$SUITE_NAMESPACE" "itom-nom-tftpd" UDP 69 69
+  addListenerForService "$external_nlb" "$SUITE_NAMESPACE" "itom-nom-tftpd" UDP 32290-32299 32290-32299

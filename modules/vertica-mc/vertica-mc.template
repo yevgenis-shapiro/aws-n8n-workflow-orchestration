@@ -1,0 +1,359 @@
+{
+	"AWSTemplateFormatVersion" : "2010-09-09",
+	"Description" : "This template deploys 1 Vertica Management Console with provisioning node in existing VPC/Subnet  --AWSMP::8e10071d-8a2f-4eb3-8bc8-d4d771a89011::66329c2f-2d3e-466f-0393-af3b06a135cb",
+	"Metadata": {
+		"Comment" : "Last CFT modification date: 11/25/2020",
+		"AWS::CloudFormation::Interface": {
+			"ParameterGroups": [
+				{
+					"Label": {"default": "Deployment destination VPC and Subnet Information"},
+					"Description": {"default": ""},
+					"Parameters": ["ExistingVPC", "ExistingSubnet"]
+				},
+				{
+					"Label": {"default": "Vertica Management Console Information"},
+					"Description": {"default": ""},
+					"Parameters": ["McDbadmin", "McDbadminPassword","MCInstanceType","AWSAuthenticate"]
+				},
+				{
+					"Label": {"default": "Access Information"},
+					"Description": {"default": ""},
+					"Parameters": ["KeyName", "SSHLocation"]
+				},
+				{
+					"Label": { "default": "Other"},
+					"Description": { "default": ""},
+					"Parameters": ["EULA"]
+				}
+			],
+			"ParameterLabels": {
+				"ExistingVPC": {"default": "VPC"  },
+				"ExistingSubnet": {"default": "Subnet"  },
+				"McDbadmin": {"default": "Login"  },
+				"McDbadminPassword": {"default": "Password"},
+				"MCInstanceType" : {"default":"EC2 type"},
+				"AWSAuthenticate": {"default": "Authentication method"},
+				"SSHLocation": {"default": "CIDR Range"},
+				"EULA": {"default": "Accept Terms and Conditions"},
+				"KeyName" : {"default":"Key Pair"}
+			}
+		}
+	},
+	"Parameters" : {
+		"ExistingVPC": {
+			"Description": "VPC ID",
+			"Type": "AWS::EC2::VPC::Id"
+		},
+		"ExistingSubnet": {
+			"Description": "Subnet ID belongs to the above VPC, must be PUBLIC",
+			"Type": "AWS::EC2::Subnet::Id"
+		},
+		"McDbadmin": {
+			"Description" : "Vertica MC administrator login",
+			"Default": "uidbadmin",
+			"Type": "String",
+			"MinLength": "2",
+			"MaxLength": "32",
+			"AllowedPattern" : "[a-zA-Z_][a-zA-Z0-9-_.$]+",
+			"ConstraintDescription" : "Begin with letter or underscore, may contain letters, digits, underscores, hyphens, dots and dollar sign($) elsewhere."
+		},
+		"McDbadminPassword": {
+			"Description" : "Vertica MC administrator password, 8-30 characters. Must contain upper and lower case letter, number, and one of the special characters \"~ ! @ # $ % ^ & * ( ) _ + = [ ] / ? > < . ,-\" ",
+			"Type": "String",
+			"MinLength": "8",
+			"MaxLength": "30",
+			"AllowedPattern" : "(?=.*?[a-z])(?=.*?[A-Z])(?=.*?[0-9])(?=.*?[~!@#$%^&*()_+=\\[\\]\\/?><.,-])[a-zA-Z0-9~!@#$%^&*()_+=\\[\\]\\/?><.,-]*",
+			"NoEcho": "true",
+			"ConstraintDescription" : "Length 8-30 characters. Must contain upper and lower case letter, number, and one of the special characters \"~ ! @ # $ % ^ & * ( ) _ + = [ ] / ? > < . ,-\" "
+		},
+		"MCInstanceType" : {
+			"Description" : "AWS EC2 Instance Type for Vertica Management Console",
+			"Type" : "String",
+			"Default" : "c4.xlarge",
+			"AllowedValues" : ["c5.large", "c4.large", "c5.xlarge", "c4.xlarge"],
+			"ConstraintDescription" : "valid EC2 instance type for Vertica Management Console"
+		},
+		"AWSAuthenticate" : {
+			"Description" : "Authentication method for Vertica AWS instance provisioning and cluster management",
+			"Type" : "String",
+			"Default" : "IAM Role Instance Profile",
+			"AllowedValues" : ["IAM Role Instance Profile", "AWS Access Keys"],
+			"ConstraintDescription" : "valid EC2 instance type for Vertica Management Console"
+		},
+		"KeyName": {
+			"Description" : "Name of an existing EC2 key pair for SSH access to the EC2 instances",
+			"Type": "AWS::EC2::KeyPair::KeyName",
+			"MinLength": "1",
+			"ConstraintDescription" : "KeyName of existing EC2 key pair is needed"
+		},
+		"SSHLocation" : {
+			"Description" : "The range of IP addresses to allow access to Vertica Management Console and SSH access to the MC instance. Use CIDR notation, for example: 192.0.2.0/24 or 0.0.0.0/0",
+			"Type": "String",
+			"MinLength": "9",
+			"MaxLength": "18",
+			"AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
+			"ConstraintDescription": "must be a CIDR block, e.g. 172.0.48.0/24"
+		},
+		"EULA" : {
+			"Description" : "You must accept End User License Agreement (EULA), see https://software.microfocus.com/en-us/about/end-user-agreement-terms",
+			"Type" : "String",
+			"AllowedValues" : [ "Yes"],
+			"ConstraintDescription" : "You must accept End User License Agreement (EULA). Select Yes to proceed"
+		},
+		"CustomAmi" : {
+			"Description": "Optionally specify an alternative AMI ID to be used for deploying Vertica",
+			"Type": "String"
+		}
+	},
+	"Mappings" : {
+		"RegionMap" : {
+			"us-east-1"        : {"AMI" : "ami-0f11465216109ccdf"},
+			"us-east-2"        : {"AMI" : "ami-04d8035d623b5e6bb"},
+			"us-west-1"        : {"AMI" : "ami-05d6070e99f17927e"},
+			"us-west-2"        : {"AMI" : "ami-0420f59d05df01b5d"},
+			"ca-central-1"        : {"AMI" : "ami-09bea11cbaa4b3d1e"},
+			"eu-central-1"        : {"AMI" : "ami-0f2b0750e7d72435c"},
+			"eu-west-1"        : {"AMI" : "ami-02c1c5732e9a5670f"},
+			"eu-west-2"        : {"AMI" : "ami-06cf231a323df2647"},
+			"ap-southeast-1"        : {"AMI" : "ami-0642635be8b1d1ae2"},
+			"ap-southeast-2"        : {"AMI" : "ami-09c726f17aca57958"},
+			"ap-south-1"        : {"AMI" : "ami-0cff3cb44e546a04d"},
+			"ap-northeast-1"        : {"AMI" : "ami-00e647e34d06dc7c3"},
+			"ap-northeast-2"        : {"AMI" : "ami-0f22bc49dfe322ea7"},
+			"sa-east-1"        : {"AMI" : "ami-09ec2d3ceff6df6c1"}
+		}
+	},
+	"Conditions" : {
+		"UseIAMRoleCond" : { "Fn::Equals" : [ { "Ref" : "AWSAuthenticate" }, "IAM Role Instance Profile" ] },
+		"UseAccessKeysCond" : { "Fn::Equals" : [ { "Ref" : "AWSAuthenticate" }, "AWS Access Keys" ] },
+		"UseCustomAmi" : { "Fn::Not" : [ { "Fn::Equals" : [ { "Ref":  "CustomAmi" }, "" ] } ] }
+	},
+	"Resources" : {
+		"VerticaProvisioningServiceUsingIAMRole": {
+			"Type": "AWS::IAM::Role"
+		,"Condition": "UseIAMRoleCond"
+		,"Properties": {
+				"AssumeRolePolicyDocument": {
+					"Statement": [{
+						"Action": ["sts:AssumeRole"]
+					,"Effect": "Allow"
+					,"Principal": {
+							"Service": ["ec2.amazonaws.com"]}
+					}
+					]
+				,"Version": "2012-10-17"}
+			,"Path": "/"
+			,"Policies": [ {
+					"PolicyDocument": {
+						"Statement": [{
+							"Action": [
+								"s3:ListBucket",
+								"s3:GetObject",
+								"s3:GetBucketLocation",
+								"s3:GetObjectAcl",
+								"s3:PutObject",
+								"s3:PutObjectAcl",
+								"cloudwatch:*",
+								"iam:List*",
+								"iam:*Role",
+								"iam:*InstanceProfile",
+								"iam:*RolePolicy",
+								"ec2:Describe*",
+								"ec2:*SecurityGroup",
+								"ec2:Authorize*",
+								"ec2:*Address",
+								"ec2:CreateTags",
+								"ec2:CreateVolume",
+								"ec2:*Instances",
+								"ec2:ModifyInstanceAttribute",
+								"iam:PassRole"]
+						,"Effect": "Allow"
+						,"Resource": "*"}
+						]
+					,"Version": "2012-10-17"}
+				,"PolicyName": "verticaProvisionService"}
+				]}
+		},
+		"VerticaProvisioningServiceUsingCredentialsRole": {
+			"Type": "AWS::IAM::Role"
+		,"Condition": "UseAccessKeysCond"
+		,"Properties": {
+				"AssumeRolePolicyDocument": {
+					"Statement": [{
+						"Action": ["sts:AssumeRole"]
+					,"Effect": "Allow"
+					,"Principal": {
+							"Service": ["ec2.amazonaws.com"]}
+					}
+					]
+				,"Version": "2012-10-17"}
+			,"Path": "/"
+			,"Policies": [ {
+					"PolicyDocument": {
+						"Statement": [{
+							"Action": [
+								"s3:ListBucket",
+								"s3:GetObject",
+								"s3:GetBucketLocation",
+								"s3:GetObjectAcl",
+								"s3:PutObject",
+								"s3:PutObjectAcl",
+								"cloudwatch:*",
+								"ec2:Describe*"]
+						,"Effect": "Allow"
+						,"Resource": "*"}
+						]
+					,"Version": "2012-10-17"}
+				,"PolicyName": "verticaProvisionService"}
+				]}
+		},
+		"VerticaProvisioningServiceProfile": {
+			"Type": "AWS::IAM::InstanceProfile",
+			"Properties": {
+				"Path": "/",
+				"Roles": [
+					{ "Fn::If" : ["UseIAMRoleCond",
+						{ "Ref" : "VerticaProvisioningServiceUsingIAMRole"}
+					,{ "Ref" : "VerticaProvisioningServiceUsingCredentialsRole"}]}
+				]
+			}
+		},
+
+		"InstanceSecurityGroup" : {
+			"Type" : "AWS::EC2::SecurityGroup",
+			"Properties" : {
+				"VpcId" : { "Ref" : "ExistingVPC" },
+				"GroupDescription" : "Open protocol and ports required by Vertica",
+				"SecurityGroupIngress" : [
+					{"IpProtocol" : "tcp", "FromPort" : "22",     "ToPort" : "22",     "CidrIp" : { "Ref" : "SSHLocation" } },
+					{"IpProtocol" : "tcp", "FromPort" : "5450",   "ToPort" : "5450",   "CidrIp" : { "Ref" : "SSHLocation" } }
+				],
+				"Tags" : [ {"Key" : "Application", "Value" : { "Ref" : "AWS::StackId"} }
+				, {"Key" : "Name",     "Value" : {"Fn::Join": [ "", [ { "Ref" : "AWS::StackName" }, " SecurityGroup" ] ]} } ]
+
+			}
+		},
+
+		"IPAddressMC" : {
+			"Type" : "AWS::EC2::EIP",
+			"Properties" : {
+				"Domain" : "vpc",
+				"InstanceId" : { "Ref" : "ManagementConsoleInstance" }
+			}
+		},
+
+
+		"ManagementConsoleInstance" : {
+			"Type" : "AWS::EC2::Instance",
+			"Metadata" : {
+				"Comment" : "Installation Server",
+				"AWS::CloudFormation::Init" : {
+					"configSets" : {
+						"default" : []
+					}
+				}
+			},
+			"Properties" : {
+				"ImageId" : {
+					"Fn::If": [ "UseCustomAmi",
+						{ "Ref": "CustomAmi" },
+						{ "Fn::FindInMap" : [ "RegionMap", { "Ref" : "AWS::Region" }, "AMI" ]}
+					]
+				},
+				"SecurityGroupIds" : [{ "Ref" : "InstanceSecurityGroup" }],
+				"SubnetId" : { "Ref" : "ExistingSubnet" },
+				"InstanceType" : { "Ref" : "MCInstanceType" },
+				"IamInstanceProfile" :  { "Ref" : "VerticaProvisioningServiceProfile"},
+				"KeyName" : { "Ref" : "KeyName" },
+				"Tags" : [
+					{"Key" : "Application", "Value" : { "Ref" : "AWS::StackId"} } ,
+					{"Key" : "Name",     "Value" : {"Fn::Join": [ "", [ { "Ref" : "AWS::StackName" }, " Vertica Management Console" ] ]} }
+				],
+				"UserData"       : { "Fn::Base64" : { "Fn::Join" : ["", [
+					"#!/bin/bash\n",
+					"set -x\n",
+					"exec 1> >(tee -a /root/run_once.log) 2>&1\n",
+					"# Helper function\n",
+					"function error_exit\n",
+					"{\n",
+					"  /usr/bin/cfn-signal -e 1 -r \"$1\" '", { "Ref" : "ManagementConsoleWaitHandle" }, "'\n",
+					"  exit 1\n",
+					"}\n",
+					"/usr/bin/cfn-init -s ", { "Ref" : "AWS::StackId" }, " -r ManagementConsoleInstance ",
+					"         --region ", { "Ref" : "AWS::Region" }, " || error_exit 'Failed to run cfn-init'\n",
+
+					"# added to assist vertica install    \n",
+					"# set the root volume scheduler and read ahead options correctly    \n",
+					"[ -f //sys/block/xvda/queue/scheduler ] && echo noop >  /sys/block/xvda/queue/scheduler \n",
+					"/sbin/blockdev --setra 2048 /dev/xvda1    \n",
+					"systemctl start chronyd  \n",
+					"systemctl status chronyd \n",
+					"sudo sh /var/opt/vconsole/install_mc.sh \n",
+					"# ready to configure management console\n",
+					"printf -v MCPASSWORD '", { "Ref" : "McDbadminPassword" }, "' \n",
+					"cd /var/opt/vconsole; sudo sh mc_config.sh ", { "Ref" : "McDbadmin" }, " $MCPASSWORD &>> /home/dbadmin/config.log \n",
+					"cat /home/dbadmin/config.log \n",
+					"errormessage=$(cat /home/dbadmin/config.log | grep -i 'error\\|exception') \n",
+					"if [ -z $errormessage ]; then\n",
+					"[ \"dbadmin\" != \"", { "Ref" : "McDbadmin" }, "\" ] && sudo cp -r /home/dbadmin/.ssh /home/" , { "Ref" : "McDbadmin" } , "/.ssh; sudo chown -R " , { "Ref" : "McDbadmin" } , ":verticadba /home/" , { "Ref" : "McDbadmin" } , "/.ssh\n",
+					"[ \"dbadmin\" != \"", { "Ref" : "McDbadmin" }, "\" ] && sudo echo '", { "Ref" : "McDbadmin" }, "      ALL=(ALL)      NOPASSWD: ALL' > /etc/sudoers.d/vertica  \n",
+					"sudo echo 'vertica.database.mode=eon' >> /opt/vconsole/config/console.properties \n",
+					"[ \"IAM Role Instance Profile\" == \"", { "Ref" : "AWSAuthenticate" }, "\" ] && sudo echo 'cloud.authentication=IAM' >> /opt/vconsole/config/console.properties \n",
+					"sudo echo 'provisioning.service.enabled=true' >> /opt/vconsole/config/console.properties \n",
+					"# All done so signal success\n",
+					"/usr/bin/cfn-signal -e 0 -r \"MC configuration completed\" '", { "Ref" : "ManagementConsoleWaitHandle" }, "'\n",
+					"else\n",
+					"# ERROR so signal fail\n",
+					"/usr/bin/cfn-signal -e 1 -r \"MC configuration failed: $errormessage\" '", { "Ref" : "ManagementConsoleWaitHandle" }, "'\n",
+					"fi\n"
+				]]}}
+			}
+		},
+
+		"ManagementConsoleWaitHandle" : {
+			"Type" : "AWS::CloudFormation::WaitConditionHandle"
+		},
+		"VerticaServerWaitCondition" : {
+			"Type" : "AWS::CloudFormation::WaitCondition",
+			"DependsOn" :  "ManagementConsoleInstance",
+			"Properties" : {
+				"Handle" : {"Ref" : "ManagementConsoleWaitHandle"},
+				"Timeout" : "6000",
+				"Count"   : "1"
+			}
+		}
+	},
+	"Outputs" : {
+		"Documentation" : {
+			"Value" : "https://my.vertica.com/docs/latest/HTML/index.htm",
+			"Description" : "Vertica Documentation"
+		},
+		"EULA" : {
+			"Value" : "https://software.microfocus.com/en-us/about/end-user-agreement-terms",
+			"Description" : "End User License Agreement"
+		},
+		"ManagementConsole" : {
+			"Value" :    { "Fn::Join" : [ "", ["https://", { "Fn::GetAtt" : ["ManagementConsoleInstance", "PublicIp"] }, ":5450/webui\\,        (login: ",  { "Ref": "McDbadmin"  }, ", password: ****)" ]]},
+			"Description" : "Access Vertica Management Console for provisioning the Vertica Database Cluster"
+		},
+		"MCSSH" : {
+			"Value" : { "Fn::Join" : [ "", ["( ssh -i ", { "Ref": "KeyName"  } , ".pem " , { "Ref": "McDbadmin"  },"@", { "Fn::GetAtt" : ["ManagementConsoleInstance", "PublicIp"] }, ")"]]},
+			"Description" : "SSH to Management Console instance."
+		}
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

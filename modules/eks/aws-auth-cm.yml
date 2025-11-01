@@ -1,0 +1,9 @@
+- groups:
+    - system:masters
+  rolearn: ${cluster_client_role_arn}
+  username: system:node:{{EC2PrivateDNSName}}
+- groups:
+    - system:nodes
+    - system:bootstrappers
+  rolearn: ${cluster_role_arn}
+  username: system:node:{{EC2PrivateDNSName}}
